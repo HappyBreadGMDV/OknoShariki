@@ -1,9 +1,9 @@
 const cacheName = "HappyBread-OknoShariki-1.0";
 const contentToCache = [
     "Build/OknoShariki.loader.js",
-    "Build/OknoShariki.framework.js",
-    "Build/OknoShariki.data",
-    "Build/OknoShariki.wasm",
+    "Build/OknoShariki.framework.js.unityweb",
+    "Build/OknoShariki.data.unityweb",
+    "Build/OknoShariki.wasm.unityweb",
     "TemplateData/style.css"
 
 ];
