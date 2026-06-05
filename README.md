@@ -1,1 +1,1 @@
-"# OknoShariki" 
+# OknoShariki
