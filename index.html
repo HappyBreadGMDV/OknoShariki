@@ -104,35 +104,60 @@
       };
       document.body.appendChild(script);
 
-      // ========== ВЫБОР АУДИОФАЙЛА (data URL через readAsDataURL) ==========
+        // ========== ВЫБОР АУДИОФАЙЛА (управляемый из Unity) ==========
         var audioFileInput = document.getElementById('audioFileInput');
+        var uploadedBlobUrl = null;      // сохранённый Blob URL
+        var currentAudio = null;         // текущий экземпляр Audio
 
         audioFileInput.onchange = function(e) {
             var file = e.target.files[0];
             if (!file) {
-                if (window.unityInstance)
-                    window.unityInstance.SendMessage('AudioLoader', 'OnFileSelected', '');
+                // Отмена выбора – ничего не делаем
                 return;
             }
 
-            var reader = new FileReader();
-            reader.onload = function(ev) {
-                // Готовый data URL (например, "data:audio/mpeg;base64,...")
-                var dataUrl = ev.target.result;
-                var message = dataUrl + '|' + file.name;
-                if (window.unityInstance)
-                    window.unityInstance.SendMessage('AudioLoader', 'OnFileSelected', message);
-            };
-            reader.onerror = function() {
-                console.error('Ошибка чтения файла');
-            };
-            reader.readAsDataURL(file);   // ← браузер делает всё сам, асинхронно, без лагов
+            // Освобождаем предыдущий Blob URL, если был
+            if (uploadedBlobUrl) {
+                URL.revokeObjectURL(uploadedBlobUrl);
+            }
+
+            // Останавливаем предыдущее воспроизведение, если было
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+
+            uploadedBlobUrl = URL.createObjectURL(file);
+
+            // Отправляем ТОЛЬКО имя файла в Unity (для UI)
+            if (window.unityInstance)
+                window.unityInstance.SendMessage('AudioLoader', 'OnFileSelected', file.name);
         };
+
+        // Вызывается из Unity, когда нужно начать воспроизведение загруженного трека
+        function playUploadedAudio() {
+            if (!uploadedBlobUrl) return;
+            // Остановим предыдущий звук, если есть
+            if (currentAudio) {
+                currentAudio.pause();
+            }
+            currentAudio = new Audio(uploadedBlobUrl);
+            currentAudio.play().catch(function(err) {
+                console.error('Ошибка воспроизведения: ' + err);
+            });
+        }
+
+        // Остановка загруженного трека (можно вызывать при финише или сбросе)
+        function stopUploadedAudio() {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+        }
 
         function openFileDialog() {
             audioFileInput.click();
         }
-        // ==================================================
         // ==================================================
       // ==================================================
     </script>
