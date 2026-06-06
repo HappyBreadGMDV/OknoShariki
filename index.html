@@ -19,6 +19,10 @@
       </div>
       <div id="unity-warning"> </div>
     </div>
+
+    <!-- Скрытый input для выбора аудиофайла -->
+    <input type="file" id="audioFileInput" accept="audio/*" style="display: none" />
+
     <script>
       window.addEventListener("load", function () {
         if ("serviceWorker" in navigator) {
@@ -92,12 +96,50 @@
         createUnityInstance(canvas, config, (progress) => {
           progressBarFull.style.width = 100 * progress + "%";
         }).then((unityInstance) => {
+          window.unityInstance = unityInstance;   // Сохраняем экземпляр
           loadingBar.style.display = "none";
         }).catch((message) => {
           alert(message);
         });
       };
       document.body.appendChild(script);
+
+      // ========== ФУНКЦИИ ДЛЯ ВЫБОРА АУДИОФАЙЛА ==========
+      var audioFileInput = document.getElementById('audioFileInput');
+
+      audioFileInput.onchange = function(e) {
+        var file = e.target.files[0];
+        if (!file) {
+          // Пользователь отменил выбор
+          if (window.unityInstance)
+            window.unityInstance.SendMessage('AudioLoader', 'OnFileSelected', '');
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+          var arrayBuffer = ev.target.result;
+          var base64 = arrayBufferToBase64(arrayBuffer);
+          var message = base64 + '|' + file.name;
+          if (window.unityInstance)
+            window.unityInstance.SendMessage('AudioLoader', 'OnFileSelected', message);
+        };
+        reader.readAsArrayBuffer(file);
+      };
+
+      function arrayBufferToBase64(buffer) {
+        var binary = '';
+        var bytes = new Uint8Array(buffer);
+        var len = bytes.byteLength;
+        for (var i = 0; i < len; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
+      }
+
+      function openFileDialog() {
+        audioFileInput.click();
+      }
+      // ==================================================
     </script>
   </body>
 </html>
